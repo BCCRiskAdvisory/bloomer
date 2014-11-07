@@ -7,7 +7,7 @@ typedef struct {
   int** buckets;
   int* bucket_lengths;
   int* bucket_counts;
-  int filter_byte_width;  
+  int bucket_length_step;  
 } Bloomer;
 
 Bloomer* create_bloomer(int);
