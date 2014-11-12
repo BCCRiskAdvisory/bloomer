@@ -30,11 +30,8 @@ void merge_results(int** results, int* result_counts, int bucket_count, ResultSe
   }
   tmp = create_result_set(initial_size);
   for (i = 0; i < bucket_count; ++i) {
-    printf("adding results: ");
     for (j = 0; j < result_counts[i]; ++j) {
-      printf("%d, ", results[i][j]);
     }
-    printf("\n");
     add_results(tmp, results[i], result_counts[i]);
   }
   qsort(tmp->data, tmp->count, sizeof(int), comparison);
@@ -45,7 +42,7 @@ void merge_results(int** results, int* result_counts, int bucket_count, ResultSe
       continue;
     }
     else {
-      add_results(dest, tmp->data + i, 1);
+      add_results(dest, tmp->data + i, 1);      
       last = tmp->data[i];
     }
   }

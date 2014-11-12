@@ -1,4 +1,5 @@
 require 'ffi'
+require 'bloomer/bloomer'
 
 class ResultSet < FFI::Struct
   layout :data, :pointer,
@@ -20,10 +21,8 @@ class Bloomer < FFI::Struct
     :bucket_lengths, :pointer,
     :bucket_counts, :pointer,
     :bucket_length_step, :int,
-    :hash_key_one, :int,
-    :hash_key_two, :int,
-    :hash_key_three, :int,
-    :hash_key_four, :int
+    :max_bucket_count, :int,
+    :hash_count, :int
 
   def buckets
     self[:buckets].get_array_of_pointer(0, self[:bitwidth]).map.with_index do |p, i|
@@ -31,8 +30,8 @@ class Bloomer < FFI::Struct
     end
   end
 
-  def self.create(bitwidth, bucket_length_step)
-    Bloomer.new(ClassMethods.create_bloomer(bitwidth, bucket_length_step))
+  def self.create(bitwidth, bucket_length_step, hash_count)
+    Bloomer.new(ClassMethods.create_bloomer(bitwidth, bucket_length_step, hash_count))
   end
 
   def print
@@ -44,12 +43,24 @@ class Bloomer < FFI::Struct
     ClassMethods.add_value_to_bucket(pointer, bucket, value, val)
   end
 
+  def add_value(string, id)
+    buf = FFI::MemoryPointer.new(:uint8, string.bytes.length)
+    buf.put_array_of_uint8(0, string.bytes)
+    ClassMethods.add_value(pointer, buf, string.bytes.length, id)
+  end
+
   def add_element(bitfield, value)        
     ClassMethods.add_element(pointer, bitfield_to_buffer(bitfield), value)
   end
 
   def retrieve_elements(bitfield) 
     ResultSet.new(ClassMethods.retrieve_elements(pointer, bitfield_to_buffer(bitfield)))
+  end
+
+  def match(string)
+    buf = FFI::MemoryPointer.new(:uint8, string.bytes.length)
+    buf.put_array_of_uint8(0, string.bytes)
+    ResultSet.new(ClassMethods.match_elements(pointer, buf, string.bytes.length))
   end
 
   def bitfield_to_buffer(bitfield)
@@ -68,17 +79,16 @@ class Bloomer < FFI::Struct
 
   module ClassMethods
     extend FFI::Library
-    ffi_lib 'ext/bloomer/bloomer.so'
-    attach_function :create_bloomer, [:int, :int], :pointer
+    path = File.dirname(__FILE__).to_s
+    puts path
+    puts File.expand_path(path, '../../../../../')
+    ffi_lib [FFI::CURRENT_PROCESS, 'bloomer']
+    attach_function :create_bloomer, [:int, :int, :int], :pointer
     attach_function :print_bloomer, [:pointer], :void
     attach_function :add_value_to_bucket, [:pointer, :int, :int, :int], :void
     attach_function :add_element, [:pointer, :pointer, :int], :void
     attach_function :retrieve_elements, [:pointer, :pointer], :pointer
+    attach_function :add_value, [:pointer, :pointer, :int, :int], :void
+    attach_function :match_elements, [:pointer, :pointer, :int], :pointer
   end  
-end
-
-class String
-  def pad_to(bits)
-    ('0' * (bits - self.length)) + self
-  end
 end

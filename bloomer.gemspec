@@ -6,4 +6,5 @@ Gem::Specification.new do |s|
   s.authors = 'Owen Mooney'
   s.files = Dir['lib/**/*']
   s.extensions = ['ext/bloomer/extconf.rb']
+  s.add_development_dependency 'rspec'
 end

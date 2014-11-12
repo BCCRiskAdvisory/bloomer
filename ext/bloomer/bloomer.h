@@ -2,6 +2,7 @@
 #define _BLOOMER_H
 
 #include <stdint.h>
+#include "hashing.h"
 
 typedef struct {
   int bitwidth;  
@@ -9,12 +10,13 @@ typedef struct {
   int** buckets;
   int* bucket_lengths;
   int* bucket_counts;
-  int bucket_length_step;
-  int hash_keys[4];
+  int bucket_length_step;  
   int max_bucket_count;
+  int hash_count;
+  HashService* hash_service;
 } Bloomer;
 
-Bloomer* create_bloomer(int, int);
+Bloomer* create_bloomer(int, int, int);
 void resize_bucket(Bloomer* b, int bucket);
 int is_set(uint32_t* bitfield, int position);
 void add_value_to_bucket(Bloomer* b, int bucket, int value, int sort);
