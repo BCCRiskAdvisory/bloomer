@@ -7,4 +7,4 @@ if enable_config('debug')
   CONFIG['debugflags'] << '-O0'
 end
 
-create_makefile 'bloomer/bloomer'
+create_makefile 'bloom_cache/bloom_cache'

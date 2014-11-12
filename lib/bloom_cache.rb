@@ -1,7 +1,20 @@
 require 'ffi'
-require 'bloomer/bloomer'
 
-class ResultSet < FFI::Struct
+module BloomCacheFFI
+  extend FFI::Library    
+  ffi_lib $LOAD_PATH.map{|p| p + '/bloom_cache/bloom_cache.so'}
+  attach_function :create_bloom_cache, [:int, :int, :int], :pointer
+  attach_function :print_bloom_cache, [:pointer], :void
+  attach_function :add_value_to_bucket, [:pointer, :int, :int, :int], :void
+  attach_function :add_element, [:pointer, :pointer, :int], :void
+  attach_function :retrieve_elements, [:pointer, :pointer], :pointer
+  attach_function :add_value, [:pointer, :pointer, :int, :int], :void
+  attach_function :match_elements, [:pointer, :pointer, :int], :pointer
+  attach_function :delete_bloom_cache, [:pointer], :void
+  attach_function :delete_result_set, [:pointer], :void
+end
+
+class ResultSet < FFI::ManagedStruct
   layout :data, :pointer,
     :count, :int,
     :size, :int,
@@ -11,9 +24,13 @@ class ResultSet < FFI::Struct
       self[:data].get_array_of_int(0, self[:count])
     end
 
+    def self.release(ptr)
+      BloomCacheFFI.delete_result_set(ptr)
+    end
+
 end
 
-class Bloomer < FFI::Struct
+class BloomCache < FFI::ManagedStruct
 
   layout :bitwidth, :int,
     :intwidth, :int,
@@ -31,36 +48,36 @@ class Bloomer < FFI::Struct
   end
 
   def self.create(bitwidth, bucket_length_step, hash_count)
-    Bloomer.new(ClassMethods.create_bloomer(bitwidth, bucket_length_step, hash_count))
+    BloomCache.new(BloomCacheFFI.create_bloom_cache(bitwidth, bucket_length_step, hash_count))
   end
 
   def print
-    ClassMethods.print_bloomer(pointer)
+    BloomCacheFFI.print_bloom_cache(pointer)
   end
 
   def add_value_to_bucket(bucket, value, sort = false)
     val = sort ? 1 : 0
-    ClassMethods.add_value_to_bucket(pointer, bucket, value, val)
+    BloomCacheFFI.add_value_to_bucket(pointer, bucket, value, val)
   end
 
   def add_value(string, id)
     buf = FFI::MemoryPointer.new(:uint8, string.bytes.length)
     buf.put_array_of_uint8(0, string.bytes)
-    ClassMethods.add_value(pointer, buf, string.bytes.length, id)
+    BloomCacheFFI.add_value(pointer, buf, string.bytes.length, id)
   end
 
   def add_element(bitfield, value)        
-    ClassMethods.add_element(pointer, bitfield_to_buffer(bitfield), value)
+    BloomCacheFFI.add_element(pointer, bitfield_to_buffer(bitfield), value)
   end
 
   def retrieve_elements(bitfield) 
-    ResultSet.new(ClassMethods.retrieve_elements(pointer, bitfield_to_buffer(bitfield)))
+    ResultSet.new(BloomCacheFFI.retrieve_elements(pointer, bitfield_to_buffer(bitfield)))
   end
 
   def match(string)
     buf = FFI::MemoryPointer.new(:uint8, string.bytes.length)
     buf.put_array_of_uint8(0, string.bytes)
-    ResultSet.new(ClassMethods.match_elements(pointer, buf, string.bytes.length))
+    ResultSet.new(BloomCacheFFI.match_elements(pointer, buf, string.bytes.length))
   end
 
   def bitfield_to_buffer(bitfield)
@@ -77,18 +94,8 @@ class Bloomer < FFI::Struct
     buf
   end
 
-  module ClassMethods
-    extend FFI::Library
-    path = File.dirname(__FILE__).to_s
-    puts path
-    puts File.expand_path(path, '../../../../../')
-    ffi_lib [FFI::CURRENT_PROCESS, 'bloomer']
-    attach_function :create_bloomer, [:int, :int, :int], :pointer
-    attach_function :print_bloomer, [:pointer], :void
-    attach_function :add_value_to_bucket, [:pointer, :int, :int, :int], :void
-    attach_function :add_element, [:pointer, :pointer, :int], :void
-    attach_function :retrieve_elements, [:pointer, :pointer], :pointer
-    attach_function :add_value, [:pointer, :pointer, :int, :int], :void
-    attach_function :match_elements, [:pointer, :pointer, :int], :pointer
-  end  
+  def self.release(ptr)
+    BloomCacheFFI.delete_bloom_cache(ptr)
+  end
+
 end

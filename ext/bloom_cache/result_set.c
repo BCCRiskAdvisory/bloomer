@@ -46,9 +46,6 @@ void merge_results(int** results, int* result_counts, int bucket_count, ResultSe
       last = tmp->data[i];
     }
   }
-  for (j = 0; j < dest->count; ++j) {
-    printf("%d\n", dest->data[j]);
-  }
   delete_result_set(tmp);  
 }
 

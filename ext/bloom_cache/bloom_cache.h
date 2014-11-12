@@ -14,11 +14,11 @@ typedef struct {
   int max_bucket_count;
   int hash_count;
   HashService* hash_service;
-} Bloomer;
+} BloomCache;
 
-Bloomer* create_bloomer(int, int, int);
-void resize_bucket(Bloomer* b, int bucket);
+BloomCache* create_bloom_cache(int, int, int);
+void resize_bucket(BloomCache* b, int bucket);
 int is_set(uint32_t* bitfield, int position);
-void add_value_to_bucket(Bloomer* b, int bucket, int value, int sort);
+void add_value_to_bucket(BloomCache* b, int bucket, int value, int sort);
 
 #endif

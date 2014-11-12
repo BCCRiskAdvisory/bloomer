@@ -1,4 +1,4 @@
-#include "bloomer.h"
+#include "bloom_cache.h"
 #include "result_set.h"
 #include "common.h"
 #include "hashing.h"
@@ -6,20 +6,20 @@
 #include <stdio.h>
 #include <string.h>
 
-void populate_result_set(Bloomer* b, ResultSet* rs, int* matching_buckets, int count);
+void populate_result_set(BloomCache* b, ResultSet* rs, int* matching_buckets, int count);
 void set_bit(uint32_t* bitfield, int position);
-void add_element(Bloomer* b, uint32_t* bitfield, int value);
+void add_element(BloomCache* b, uint32_t* bitfield, int value);
 
-void Init_bloomer() {
-  
+void Init_bloom_cache() {
+
 }
 
-Bloomer* create_bloomer(int bitwidth, int bucket_length_step, int hash_count) {
-  Bloomer* res;
+BloomCache* create_bloom_cache(int bitwidth, int bucket_length_step, int hash_count) {
+  BloomCache* res;
   int i;
-  res = malloc(sizeof(Bloomer));  
+  res = malloc(sizeof(BloomCache));  
   res->intwidth = ((bitwidth - 1) / 32) + 1;
-  res->bitwidth = res->intwidth * 32;
+  res->bitwidth = bitwidth;
   res->buckets = malloc(sizeof(int*) * res->bitwidth);
   res->bucket_lengths = malloc(sizeof(int) * res->bitwidth);
   res->bucket_counts = malloc(sizeof(int) * res->bitwidth);
@@ -35,7 +35,7 @@ Bloomer* create_bloomer(int bitwidth, int bucket_length_step, int hash_count) {
   return res;
 }
 
-void delete_bloomer(Bloomer* b) {
+void delete_bloom_cache(BloomCache* b) {
   int i;
   delete_hash_service(b->hash_service);
   free(b->bucket_lengths);
@@ -47,7 +47,7 @@ void delete_bloomer(Bloomer* b) {
   free(b);
 }
 
-void print_bloomer(Bloomer* b) {
+void print_bloom_cache(BloomCache* b) {
   int i;
   printf("%d Buckets in total\n\n", b->bitwidth);
   for(i = 0; i < b->bitwidth; ++i) {
@@ -61,7 +61,7 @@ void print_bloomer(Bloomer* b) {
   printf("\n");
 }
 
-void bitfield_from_string(Bloomer* b, const char* str, int data_length, uint32_t* bitfield) {
+void bitfield_from_string(BloomCache* b, const char* str, int data_length, uint32_t* bitfield) {
   int i, offset;
   unsigned char* res;
 
@@ -77,7 +77,7 @@ void bitfield_from_string(Bloomer* b, const char* str, int data_length, uint32_t
   free(res);
 }
 
-void add_value(Bloomer* b, const char* data, int data_length, int id) {
+void add_value(BloomCache* b, const char* data, int data_length, int id) {
   uint32_t* bitfield;
   
   bitfield = malloc(sizeof(uint32_t) * b->intwidth);
@@ -86,11 +86,8 @@ void add_value(Bloomer* b, const char* data, int data_length, int id) {
   free(bitfield);
 }
 
-void add_element(Bloomer* b, uint32_t* bitfield, int value) {
+void add_element(BloomCache* b, uint32_t* bitfield, int value) {
   int i;
-  for (i = 0; i < b->intwidth; ++i) {
-    printf("%d: %d\n", i, bitfield[i]);
-  }
   for(i = 0; i < b->bitwidth; ++i) {
     if (is_set(bitfield, i)) {
       add_value_to_bucket(b, i, value, 1);
@@ -98,10 +95,9 @@ void add_element(Bloomer* b, uint32_t* bitfield, int value) {
     else {
     }
   }
-  printf("\n");
 }
 
-void add_value_to_bucket(Bloomer* b, int bucket, int value, int sort) {
+void add_value_to_bucket(BloomCache* b, int bucket, int value, int sort) {
   if (b->bucket_counts[bucket] >= b->bucket_lengths[bucket]) {
     resize_bucket(b, bucket);
   }
@@ -112,14 +108,14 @@ void add_value_to_bucket(Bloomer* b, int bucket, int value, int sort) {
   }
 }
 
-void sort_buckets(Bloomer* b) {
+void sort_buckets(BloomCache* b) {
   int bucket = 0;
   for (bucket = 0; bucket < b->bitwidth; ++bucket) {
     qsort(b->buckets[bucket], b->bucket_counts[bucket], sizeof(int), comparison);
   }
 }
 
-void resize_bucket(Bloomer* b, int bucket) {
+void resize_bucket(BloomCache* b, int bucket) {
   int new_size = b->bucket_lengths[bucket] + b->bucket_length_step;
   b->bucket_lengths[bucket] = new_size;
   b->buckets[bucket] = realloc(b->buckets[bucket], sizeof(int) * new_size);
@@ -128,7 +124,7 @@ void resize_bucket(Bloomer* b, int bucket) {
   }
 }
 
-ResultSet* retrieve_elements(Bloomer* b, uint32_t* bitfield) {
+ResultSet* retrieve_elements(BloomCache* b, uint32_t* bitfield) {
   int* matching_buckets;
   int i, count;
   ResultSet* res;
@@ -147,7 +143,7 @@ ResultSet* retrieve_elements(Bloomer* b, uint32_t* bitfield) {
   return res;
 }
 
-ResultSet* match_elements(Bloomer* b, const char* value, int data_length) {
+ResultSet* match_elements(BloomCache* b, const char* value, int data_length) {
   uint32_t* bitfield;
   int i;
   ResultSet* res;
@@ -158,7 +154,7 @@ ResultSet* match_elements(Bloomer* b, const char* value, int data_length) {
   return res;
 }
 
-void populate_result_set(Bloomer* b, ResultSet* rs, int* matching_buckets, int count) {
+void populate_result_set(BloomCache* b, ResultSet* rs, int* matching_buckets, int count) {
   int i;
   int** data;
   int* counts;
