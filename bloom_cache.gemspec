@@ -11,4 +11,5 @@ Gem::Specification.new do |s|
   s.files = Dir['lib/**/*']
   s.extensions = ['ext/bloom_cache/extconf.rb']
   s.add_development_dependency 'rspec', '~> 3'
+  s.add_dependency 'ffi', '~> 1'
 end
