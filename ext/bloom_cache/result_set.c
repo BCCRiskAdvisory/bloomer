@@ -20,33 +20,61 @@ ResultSet* create_result_set(int initial_size) {
   return res;
 }
 
+ResultSet* intersection(int* set1, int* set2, int count1, int count2, ResultSet* dest) {
+  ResultSet* res;
+  int i = 0;
+  int j = 0;
+
+  if (dest == 0) {
+    res = create_result_set(count1 / 4);
+  }
+  else {
+    dest->count = 0;
+    res = dest;
+  }
+
+  while(i < count1 && j < count2) {
+    if (set1[i] > set2[j]) {
+      ++j;
+    }
+    else if (set1[i] < set2[j]) {
+      ++i;
+    }
+    else {      
+      add_results(res, (set1 + i), 1);
+      ++i;
+      ++j;
+    }
+  }
+  return res;
+}
+
 void merge_results(int** results, int* result_counts, int bucket_count, ResultSet* dest) {
-  ResultSet* tmp;
-  int i, j;
-  int initial_size = 0;
-  int last;
-  for (i = 0; i < bucket_count; ++i) {
-    initial_size += result_counts[i];
+  ResultSet* tmp[2];
+  int i;
+
+  if (bucket_count == 1) {
+    add_results(dest, results[0], result_counts[0]);
+    return;
   }
-  tmp = create_result_set(initial_size);
-  for (i = 0; i < bucket_count; ++i) {
-    for (j = 0; j < result_counts[i]; ++j) {
-    }
-    add_results(tmp, results[i], result_counts[i]);
+  
+  tmp[0] = intersection(results[0], results[1], result_counts[0], result_counts[1], NULL);
+
+  if (bucket_count == 2) {
+    add_results(dest, tmp[0]->data, tmp[0]->count);
+    return;
   }
-  qsort(tmp->data, tmp->count, sizeof(int), comparison);
-  add_results(dest, tmp->data, 1);
-  last = tmp->data[0];  
-  for (i = 1; i < tmp->count; ++i) {
-    if (last == tmp->data[i]) {      
-      continue;
-    }
-    else {
-      add_results(dest, tmp->data + i, 1);      
-      last = tmp->data[i];
-    }
+
+  tmp[1] = intersection(tmp[0]->data, results[2], tmp[0]->count, result_counts[2], NULL);  
+
+  for (i = 2; i < bucket_count - 1; ++i) {
+    intersection(tmp[i % 2]->data, results[i + 1], tmp[i % 2]->count, result_counts[i + 1], tmp[(i + 1) % 2]);
   }
-  delete_result_set(tmp);  
+  
+  add_results(dest, tmp[i % 2]->data, tmp[i % 2]->count);
+  
+  delete_result_set(tmp[0]);  
+  delete_result_set(tmp[1]);
 }
 
 void add_results(ResultSet* rs, int* results, int result_count) {
