@@ -4,10 +4,11 @@ require 'bloom_cache'
 describe BloomCache do
   it 'should store and retrieve records correctly' do
     b = BloomCache.create(256, 32, 4)
-    b.add_value('blah', 1)
+    b.add_value('blah', 6)
     b.add_value('bla', 4)
-    b.add_value('lba', 6)
-    expect(b.match('bla').to_a).to eq [1, 4]
+    b.add_value('lba', 2)
+    b.sort_buckets
+    expect(b.match('bla').to_a).to eq [4, 6]
   end
 
   it 'should store an element in at least one bucket' do
@@ -18,8 +19,9 @@ describe BloomCache do
 
   it 'should work correctly with different bitwidths' do
     b = BloomCache.create(35, 4, 2)
-    b.add_value('sdf', 1)
-    b.add_value('wer', 2)
-    expect(b.match('sdf').to_a).to eq [1]
+    b.add_value('sdf', 2)
+    b.add_value('wer', 1)
+    b.sort_buckets
+    expect(b.match('sdf').to_a).to eq [2]
   end
 end

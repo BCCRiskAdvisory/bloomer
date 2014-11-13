@@ -90,10 +90,8 @@ void add_element(BloomCache* b, uint32_t* bitfield, int value) {
   int i;
   for(i = 0; i < b->bitwidth; ++i) {
     if (is_set(bitfield, i)) {
-      add_value_to_bucket(b, i, value, 1);
-    }
-    else {
-    }
+      add_value_to_bucket(b, i, value, 0);
+    }    
   }
 }
 

@@ -12,6 +12,7 @@ module BloomCacheFFI
   attach_function :match_elements, [:pointer, :pointer, :int], :pointer
   attach_function :delete_bloom_cache, [:pointer], :void
   attach_function :delete_result_set, [:pointer], :void
+  attach_function :sort_buckets, [:pointer], :void
 end
 
 class ResultSet < FFI::ManagedStruct
@@ -45,6 +46,10 @@ class BloomCache < FFI::ManagedStruct
     self[:buckets].get_array_of_pointer(0, self[:bitwidth]).map.with_index do |p, i|
       p.get_array_of_int(0, self[:bucket_counts].get_array_of_int(0, self[:bitwidth])[i])
     end
+  end
+
+  def sort_buckets
+    BloomCacheFFI.sort_buckets(pointer)
   end
 
   def self.create(bitwidth, bucket_length_step, hash_count)
