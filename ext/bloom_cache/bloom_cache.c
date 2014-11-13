@@ -14,6 +14,13 @@ void Init_bloom_cache() {
 
 }
 
+void clear_cache(BloomCache* b) {
+  int i;
+  for (i = 0; i < b->bitwidth; ++i) {
+    b->bucket_counts[i] = 0;
+  }
+}
+
 BloomCache* create_bloom_cache(int bitwidth, int bucket_length_step, int hash_count) {
   BloomCache* res;
   int i;

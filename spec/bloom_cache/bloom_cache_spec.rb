@@ -24,4 +24,16 @@ describe BloomCache do
     b.sort_buckets
     expect(b.match('sdf').to_a).to eq [2]
   end
+
+  it 'should clear cache correctly' do
+    b = BloomCache.create(32, 4, 2)
+    rand_str = ->() do
+      (rand(10) + 5).times.map{ ('a'..'z').to_a[rand(26)] }.join
+    end
+    100.times { b.add_value(rand_str.call, rand(1000)) }
+    expect(b.buckets.map{ |bucket| bucket.inject(0, :+) }.inject(0, :+)).to be > 0
+    b.clear
+    expect(b.buckets.map{ |bucket| bucket.inject(0, :+) }.inject(0, :+)).to eq 0
+  end
+
 end
