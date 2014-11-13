@@ -6,9 +6,9 @@ module BloomCacheFFI
   attach_function :create_bloom_cache, [:int, :int, :int], :pointer
   attach_function :print_bloom_cache, [:pointer], :void
   attach_function :add_value_to_bucket, [:pointer, :int, :int, :int], :void
-  attach_function :add_element, [:pointer, :pointer, :int], :void
+  attach_function :add_element, [:pointer, :pointer, :int, :int], :void
   attach_function :retrieve_elements, [:pointer, :pointer], :pointer
-  attach_function :add_value, [:pointer, :pointer, :int, :int], :void
+  attach_function :add_value, [:pointer, :pointer, :int, :int, :int], :void
   attach_function :match_elements, [:pointer, :pointer, :int], :pointer
   attach_function :delete_bloom_cache, [:pointer], :void
   attach_function :delete_result_set, [:pointer], :void
@@ -65,10 +65,10 @@ class BloomCache < FFI::ManagedStruct
     BloomCacheFFI.add_value_to_bucket(pointer, bucket, value, val)
   end
 
-  def add_value(string, id)
+  def add_value(string, id, sort = false)
     buf = FFI::MemoryPointer.new(:uint8, string.bytes.length)
     buf.put_array_of_uint8(0, string.bytes)
-    BloomCacheFFI.add_value(pointer, buf, string.bytes.length, id)
+    BloomCacheFFI.add_value(pointer, buf, string.bytes.length, id, sort ? 1 : 0)
   end
 
   def add_element(bitfield, value)        

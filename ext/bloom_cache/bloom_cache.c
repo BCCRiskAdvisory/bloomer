@@ -8,7 +8,7 @@
 
 void populate_result_set(BloomCache* b, ResultSet* rs, int* matching_buckets, int count);
 void set_bit(uint32_t* bitfield, int position);
-void add_element(BloomCache* b, uint32_t* bitfield, int value);
+void add_element(BloomCache* b, uint32_t* bitfield, int value, int sort);
 
 void Init_bloom_cache() {
 
@@ -77,20 +77,20 @@ void bitfield_from_string(BloomCache* b, const char* str, int data_length, uint3
   free(res);
 }
 
-void add_value(BloomCache* b, const char* data, int data_length, int id) {
+void add_value(BloomCache* b, const char* data, int data_length, int id, int sort) {
   uint32_t* bitfield;
   
   bitfield = malloc(sizeof(uint32_t) * b->intwidth);
   bitfield_from_string(b, data, data_length, bitfield);
-  add_element(b, bitfield, id);
+  add_element(b, bitfield, id, sort);
   free(bitfield);
 }
 
-void add_element(BloomCache* b, uint32_t* bitfield, int value) {
+void add_element(BloomCache* b, uint32_t* bitfield, int value, int sort) {
   int i;
   for(i = 0; i < b->bitwidth; ++i) {
     if (is_set(bitfield, i)) {
-      add_value_to_bucket(b, i, value, 0);
+      add_value_to_bucket(b, i, value, sort);      
     }    
   }
 }
@@ -143,7 +143,7 @@ ResultSet* retrieve_elements(BloomCache* b, uint32_t* bitfield) {
 
 ResultSet* match_elements(BloomCache* b, const char* value, int data_length) {
   uint32_t* bitfield;
-  int i;
+  //int i;
   ResultSet* res;
   bitfield = malloc(sizeof(uint32_t) * b->intwidth);
   bitfield_from_string(b, value, data_length, bitfield);
