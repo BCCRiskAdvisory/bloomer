@@ -36,4 +36,17 @@ describe BloomCache do
     expect(b.buckets.map{ |bucket| bucket.inject(0, :+) }.inject(0, :+)).to eq 0
   end
 
+  it 'should deal with short strings sensibly' do #i.e. without segfaults!
+    b = BloomCache.create(32, 4, 2)
+    b.add_value('a', 3)
+    expect(b.match('a').to_a).to eq [3]
+
+    b.add_value('aa', 4)
+    expect(b.match('a').to_a).to eq [3, 4]
+
+    b.add_value('a thing', 5)
+    expect(b.match('a').to_a).to eq [3, 4]
+
+  end
+
 end
