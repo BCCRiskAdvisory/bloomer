@@ -14,6 +14,9 @@ module BloomCacheFFI
   attach_function :delete_result_set, [:pointer], :void
   attach_function :sort_buckets, [:pointer], :void
   attach_function :clear_cache, [:pointer], :void
+  attach_function :merge_results, [:pointer, :pointer, :int, :pointer], :void
+  attach_function :create_result_set, [:int], :pointer
+  attach_function :add_results, [:pointer, :pointer, :int], :void
 end
 
 class ResultSet < FFI::ManagedStruct
@@ -22,13 +25,66 @@ class ResultSet < FFI::ManagedStruct
     :size, :int,
     :size_step, :int
 
-    def to_a
-      self[:data].get_array_of_int(0, self[:count])
+  [:map, :each].each do |meth|
+    define_method meth do |*args, &block|
+      to_a.send(meth, *args, &block)
     end
+  end
 
-    def self.release(ptr)
-      BloomCacheFFI.delete_result_set(ptr)
+  def push(*vals)
+    concat(vals.flatten)
+  end
+
+  def concat(other)
+    raise ArgumentError('Target must convert to an array') if !other.respond_to?(:to_a)
+    arr = other.to_a
+    p = FFI::MemoryPointer.new(:int32, arr.length)
+    p.write_array_of_int32(arr)
+    BloomCacheFFI.add_results(pointer, p, arr.length)
+  end
+
+  def length
+    self[:count]
+  end
+
+  def count
+    self[:count]
+  end
+
+  def to_a
+    self[:data].get_array_of_int(0, self[:count])
+  end
+
+  def self.create(initial_size)
+    ResultSet.new(BloomCacheFFI.create_result_set(initial_size))
+  end
+
+  def self.release(ptr)
+    BloomCacheFFI.delete_result_set(ptr)
+  end
+
+  def clear
+    self[:count] = 0
+  end
+
+  def inspect
+    to_a.inspect
+  end
+
+  def self.merge_results(results, destination)
+    raise ArgumentError('Destination must be a ResultSet') if !destination.is_a? ResultSet      
+    res_count_array = FFI::MemoryPointer.new(:int32, results.count)
+    res_count_array.write_array_of_int32(results.map(&:length))
+    res_pointers = []
+    results.each do |res|
+      p = FFI::MemoryPointer.new(:int32, res.count)
+      p.write_array_of_int32(res)
+      res_pointers.push(p)
     end
+    res_pointer_buf = FFI::MemoryPointer.new(:pointer, results.count)
+    res_pointer_buf.write_array_of_pointer(res_pointers)
+    BloomCacheFFI.merge_results(res_pointer_buf, res_count_array, results.length, destination)
+  end
 
 end
 

@@ -68,10 +68,10 @@ void merge_results(int** results, int* result_counts, int bucket_count, ResultSe
   tmp[1] = intersection(tmp[0]->data, results[2], tmp[0]->count, result_counts[2], NULL);  
 
   for (i = 2; i < bucket_count - 1; ++i) {
-    intersection(tmp[i % 2]->data, results[i + 1], tmp[i % 2]->count, result_counts[i + 1], tmp[(i + 1) % 2]);
+    intersection(tmp[(i + 1) % 2]->data, results[i + 1], tmp[(i + 1) % 2]->count, result_counts[i + 1], tmp[i % 2]);
   }
   
-  add_results(dest, tmp[i % 2]->data, tmp[i % 2]->count);
+  add_results(dest, tmp[(i + 1) % 2]->data, tmp[(i + 1) % 2]->count);
   
   delete_result_set(tmp[0]);  
   delete_result_set(tmp[1]);
