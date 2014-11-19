@@ -73,7 +73,8 @@ void bitfield_from_string(BloomCache* b, const char* str, int data_length, uint3
   unsigned char* res;
 
   res = malloc(sizeof(char) * b->hash_service->digest_size);
-  memset(bitfield, 0, sizeof(uint32_t) * b->intwidth);  
+  memset(bitfield, 0, sizeof(uint32_t) * b->intwidth);
+  if (data_length < 3) { return; }
   for (offset = 0; offset < data_length - 2; ++offset) {
     hash_data(b->hash_service, str + offset, 3, res);
     for (i = 0; i < b->hash_count; ++i) {
