@@ -53,6 +53,8 @@ void merge_results(int** results, int* result_counts, int bucket_count, ResultSe
   ResultSet* tmp[2];
   int i;
 
+  if (bucket_count == 0) { return; }
+
   if (bucket_count == 1) {
     add_results(dest, results[0], result_counts[0]);
     return;

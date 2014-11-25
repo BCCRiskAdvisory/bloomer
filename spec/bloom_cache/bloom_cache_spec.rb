@@ -47,6 +47,8 @@ describe BloomCache do
     b.add_value('a thing', 5)
     expect(b.match('a').to_a).to eq [3, 4]
 
+    expect(b.match('').to_a).to eq []
+
   end
 
 end
